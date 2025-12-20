@@ -1,0 +1,67 @@
+# ========================
+# Secrets & Environment
+# ========================
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# ========================
+# Go build artifacts
+# ========================
+/bin/
+/dist/
+*.exe
+*.out
+*.test
+
+# ========================
+# Go tooling
+# ========================
+/go.work
+/go.work.sum
+
+# ========================
+# Editor / OS junk
+# ========================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ========================
+# Logs
+# ========================
+*.log
+
+# ========================
+# Coverage / test outputs
+# ========================
+coverage.out
+coverage.html
+
+# ========================
+# Temporary files
+# ========================
+tmp/
+temp/
+*.swp
+*.swo
+
+# ========================
+# Database / local dev
+# ========================
+*.db
+*.sqlite
+*.sqlite3
+
+# ========================
+# Vendor (if not used)
+# ========================
+/vendor/
+
+go1.25.5.linux-amd64.tar.gz
+
+
+keys/
