@@ -43,10 +43,22 @@ func main(){
 		log.Fatal("failed to load private key:", err)
 	}
 
+	publicKey, err := jwtutil.LoadPublicKey("keys/public.pem")
+	if err != nil {
+	log.Fatal("failed to load public key:", err)
+	}
+
 	signer := &jwtutil.Signer{
 		PrivateKey: privateKey,
 		KeyID:      "sentinel-key-1",
 		Issuer:     "http://localhost:8080",
+	}
+
+
+	jwk := jwtutil.PublicKeyToJWK(publicKey, "sentinel-key-1")
+
+	jwks := jwtutil.JWKS{
+	Keys: []jwtutil.JWK{jwk},
 	}
 
 
@@ -57,6 +69,8 @@ func main(){
 	DB:     db,
 	Signer: signer,
 	}
+
+	jwksHandler := &jwtutil.JWKSHandler{JWKS: jwks}
 
 
 
@@ -69,7 +83,9 @@ func main(){
 	mux.Handle("/authorize",
 	middleware.RequireSession(db, http.HandlerFunc(oauthHandler.Authorize)),
 	)
+
 	mux.HandleFunc("/token", tokenHandler.Token)
+	mux.Handle("/.well-known/jwks.json", jwksHandler)
 
 
 	log.Println("Sentinel listening on :8080")

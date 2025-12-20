@@ -24,6 +24,7 @@ func (h *AuthorizeHandler) Authorize(w http.ResponseWriter, r *http.Request) {
 	redirectURI := r.URL.Query().Get("redirect_uri")
 	codeChallenge := r.URL.Query().Get("code_challenge")
 	codeChallengeMethod := r.URL.Query().Get("code_challenge_method")
+	state := r.URL.Query().Get("state")
 
 	if clientID == "" || redirectURI == "" {
 		http.Error(w, "invalid request", http.StatusBadRequest)
@@ -82,7 +83,7 @@ func (h *AuthorizeHandler) Authorize(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(
 		w,
 		r,
-		redirectURI+"?code="+code,
+		redirectURI+"?code="+code+"&state="+state,
 		http.StatusFound,
 	)
 }
