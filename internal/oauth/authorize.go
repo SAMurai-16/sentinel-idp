@@ -91,6 +91,10 @@ func (h *AuthorizeHandler) Authorize(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthorizeHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+	http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+	return
+	}
 	cookie, err := r.Cookie("sentinel_access")
 	if err != nil {
 		w.WriteHeader(http.StatusNoContent)
@@ -113,6 +117,8 @@ func (h *AuthorizeHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	print("token revoked")
+
 	// Delete cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     "sentinel_access",
@@ -124,4 +130,31 @@ func (h *AuthorizeHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+
+func (h *AuthorizeHandler) IsRevoked(w http.ResponseWriter, r *http.Request) {
+	jti := r.URL.Query().Get("jti")
+	if jti == "" {
+		http.Error(w, "missing jti", http.StatusBadRequest)
+		return
+	}
+
+	var exists bool
+	err := h.DB.QueryRow(
+		"SELECT EXISTS (SELECT 1 FROM revoked_tokens WHERE jti = $1)",
+		jti,
+	).Scan(&exists)
+
+	if err != nil {
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+
+	if exists {
+		w.WriteHeader(http.StatusOK) // revoked
+		return
+	}
+
+	w.WriteHeader(http.StatusNotFound) // not revoked
 }

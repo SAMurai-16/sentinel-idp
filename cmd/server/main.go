@@ -83,11 +83,19 @@ func main(){
 	mux.Handle("/authorize",
 	middleware.RequireSession(db, http.HandlerFunc(oauthHandler.Authorize)),
 	)
-	mux.HandleFunc("/logout", oauthHandler.Logout)
+	mux.Handle("/logout",
+	middleware.RequireCSRF(
+		http.HandlerFunc(oauthHandler.Logout),
+	),
+	)
+
 
 
 	mux.HandleFunc("/token", tokenHandler.Token)
 	mux.Handle("/.well-known/jwks.json", jwksHandler)
+
+	mux.HandleFunc("/revoked", oauthHandler.IsRevoked)
+
 
 
 	log.Println("Sentinel listening on :8080")
