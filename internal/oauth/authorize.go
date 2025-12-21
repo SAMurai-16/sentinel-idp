@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"net/http"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthorizeHandler struct {
@@ -86,4 +88,40 @@ func (h *AuthorizeHandler) Authorize(w http.ResponseWriter, r *http.Request) {
 		redirectURI+"?code="+code+"&state="+state,
 		http.StatusFound,
 	)
+}
+
+func (h *AuthorizeHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("sentinel_access")
+	if err != nil {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	tokenStr := cookie.Value
+
+	token, _, err := jwt.NewParser().ParseUnverified(tokenStr, jwt.MapClaims{})
+	if err == nil {
+		claims := token.Claims.(jwt.MapClaims)
+
+		if jtiVal, ok := claims["jti"]; ok {
+			if jti, ok := jtiVal.(string); ok {
+				h.DB.Exec(
+					"INSERT INTO revoked_tokens (jti) VALUES ($1) ON CONFLICT DO NOTHING",
+					jti,
+				)
+			}
+		}
+	}
+
+	// Delete cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "sentinel_access",
+		Value:    "",
+		MaxAge:   -1,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	w.WriteHeader(http.StatusNoContent)
 }

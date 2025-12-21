@@ -3,6 +3,7 @@ package jwtutil
 import (
 	"crypto/rsa"
 	"time"
+	"github.com/google/uuid"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -22,6 +23,7 @@ func (s *Signer) MintAccessToken(userID int, clientID string) (string, error) {
 		"aud": clientID,
 		"iat": now.Unix(),
 		"exp": now.Add(15 * time.Minute).Unix(),
+		"jti": uuid.NewString(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)

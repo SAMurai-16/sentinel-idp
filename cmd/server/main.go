@@ -83,6 +83,8 @@ func main(){
 	mux.Handle("/authorize",
 	middleware.RequireSession(db, http.HandlerFunc(oauthHandler.Authorize)),
 	)
+	mux.HandleFunc("/logout", oauthHandler.Logout)
+
 
 	mux.HandleFunc("/token", tokenHandler.Token)
 	mux.Handle("/.well-known/jwks.json", jwksHandler)
