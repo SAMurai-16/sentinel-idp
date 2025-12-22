@@ -49,6 +49,7 @@ func main(){
 	}
 
 	signer := &jwtutil.Signer{
+		DB: db,
 		PrivateKey: privateKey,
 		KeyID:      "sentinel-key-1",
 		Issuer:     "http://localhost:8080",
