@@ -77,6 +77,19 @@ func(h *TokenHandler) handleAuthorizationCode(w http.ResponseWriter,r *http.Requ
 		return
 	}
 
+	idToken, err := h.Signer.MintIDToken(
+	authCode.UserID,
+	clientID,
+	authCode.ExpiresAt,
+	)
+	if err != nil {
+	http.Error(w, "id token signing failed", http.StatusInternalServerError)
+	return
+	}
+
+	// print(idToken)
+
+
 	// 🔄 Create refresh token (inside tx)
 	rawRT, hashRT := generateRefreshToken()
 	rtID := uuid.New()
@@ -106,6 +119,7 @@ func(h *TokenHandler) handleAuthorizationCode(w http.ResponseWriter,r *http.Requ
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"access_token":  accessToken,
+		"id_token": idToken,
 		"refresh_token": rawRT,
 		"token_type":    "Bearer",
 		"expires_in":    900,

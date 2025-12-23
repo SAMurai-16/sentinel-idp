@@ -62,3 +62,33 @@ func (s *Signer) MintAccessToken(userID int, clientID string) (string, error) {
 
 	return token.SignedString(s.PrivateKey)
 }
+
+
+
+func (s *Signer) MintIDToken(userID int, clientID string, authTime time.Time) (string, error) {
+
+	var username string
+	err := s.DB.QueryRow(
+		`SELECT username FROM users WHERE id=$1`,
+		userID,
+	).Scan(&username)
+	if err != nil {
+		return "", err
+	}
+
+	now := time.Now()
+
+	claims := jwt.MapClaims{
+		"iss":       s.Issuer,
+		"sub":       userID,
+		"aud":       clientID,
+		"exp":       now.Add(15 * time.Minute).Unix(),
+		"iat":       now.Unix(),
+		"auth_time": authTime.Unix(),
+
+		"preferred_username": username,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	return token.SignedString(s.PrivateKey)
+}

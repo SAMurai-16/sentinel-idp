@@ -12,6 +12,7 @@ import (
 	"github.com/SAMurai-16/sentinel-idp/internal/storage"
 	"github.com/SAMurai-16/sentinel-idp/internal/middleware"
 	jwtutil "github.com/SAMurai-16/sentinel-idp/internal/jwt"
+	 "github.com/SAMurai-16/sentinel-idp/internal/oidc"
 
 
 )
@@ -73,6 +74,8 @@ func main(){
 
 	jwksHandler := &jwtutil.JWKSHandler{JWKS: jwks}
 
+	issuer := "http://localhost:8080"
+
 
 
 	mux := http.NewServeMux()
@@ -96,6 +99,11 @@ func main(){
 	mux.Handle("/.well-known/jwks.json", jwksHandler)
 
 	mux.HandleFunc("/revoked", oauthHandler.IsRevoked)
+
+	mux.Handle(
+	"/.well-known/openid-configuration",
+	oidc.DiscoveryHandler(issuer),
+	)
 
 
 
