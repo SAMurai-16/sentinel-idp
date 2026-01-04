@@ -1,21 +1,21 @@
 package main
 
-
 import (
 	"log"
 	"net/http"
 	"os"
+	"time"
+
 	"github.com/joho/godotenv"
 
 	"github.com/SAMurai-16/sentinel-idp/internal/auth"
-	"github.com/SAMurai-16/sentinel-idp/internal/oauth"
-	"github.com/SAMurai-16/sentinel-idp/internal/storage"
-	"github.com/SAMurai-16/sentinel-idp/internal/middleware"
 	jwtutil "github.com/SAMurai-16/sentinel-idp/internal/jwt"
-	 "github.com/SAMurai-16/sentinel-idp/internal/oidc"
-
-
+	"github.com/SAMurai-16/sentinel-idp/internal/middleware"
+	"github.com/SAMurai-16/sentinel-idp/internal/oauth"
+	"github.com/SAMurai-16/sentinel-idp/internal/oidc"
+	"github.com/SAMurai-16/sentinel-idp/internal/storage"
 )
+
 
 
 func main(){
@@ -39,28 +39,35 @@ func main(){
 	defer db.Close()
 
 
-	privateKey, err := jwtutil.LoadPrivateKey("keys/private.pem")
-	if err != nil {
-		log.Fatal("failed to load private key:", err)
-	}
 
-	publicKey, err := jwtutil.LoadPublicKey("keys/public.pem")
+
+
+
+
+
+
+	// privateKey, err := jwtutil.LoadPrivateKey("keys/private.pem")
+	// if err != nil {
+	// 	log.Fatal("failed to load private key:", err)
+	// }
+
+	// publicKey, err := jwtutil.LoadPublicKey("keys/public.pem")
+	// if err != nil {
+	// log.Fatal("failed to load public key:", err)
+	// }
+
+
+	keyManager, err := jwtutil.LoadKeys(db)
 	if err != nil {
-	log.Fatal("failed to load public key:", err)
+		log.Fatal(err)
 	}
+	
+	
 
 	signer := &jwtutil.Signer{
-		DB: db,
-		PrivateKey: privateKey,
-		KeyID:      "sentinel-key-1",
-		Issuer:     "http://localhost:8080",
-	}
-
-
-	jwk := jwtutil.PublicKeyToJWK(publicKey, "sentinel-key-1")
-
-	jwks := jwtutil.JWKS{
-	Keys: []jwtutil.JWK{jwk},
+	DB:         db,
+	Issuer:     "http://localhost:8080",
+	KeyManager: keyManager,
 	}
 
 
@@ -72,9 +79,22 @@ func main(){
 	Signer: signer,
 	}
 
-	jwksHandler := &jwtutil.JWKSHandler{JWKS: jwks}
+	jwksHandler := &jwtutil.JWKSHandler{KeyManager: keyManager}
 
 	issuer := "http://localhost:8080"
+
+	go func() {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if err := keyManager.ReloadFromDB(db); err != nil {
+			log.Println("key reload failed:", err)
+		} else {
+			log.Println("signing keys reloaded")
+		}
+	}
+	}()
 
 
 
@@ -96,7 +116,7 @@ func main(){
 
 
 	mux.HandleFunc("/token", tokenHandler.Token)
-	mux.Handle("/.well-known/jwks.json", jwksHandler)
+	mux.Handle("/jwks.json", jwksHandler)
 
 	mux.HandleFunc("/revoked", oauthHandler.IsRevoked)
 

@@ -3,7 +3,9 @@ package jwtutil
 import (
 	"crypto/rsa"
 	"database/sql"
+	"errors"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,11 +14,22 @@ import (
 )
 
 type Signer struct {
-	PrivateKey *rsa.PrivateKey
-	KeyID      string
+
 	Issuer     string
 	DB *sql.DB
+	KeyManager *KeyManager
 }
+
+
+
+type KeyManager struct {
+	mu         sync.RWMutex	
+	privateKeys map[string]*rsa.PrivateKey
+	publicKeys  map[string]*rsa.PublicKey
+	activeKID  string
+}
+
+
 
 
 func getScopesForUser(db *sql.DB, userID int) ([]string, error) {
@@ -45,7 +58,16 @@ func getScopesForUser(db *sql.DB, userID int) ([]string, error) {
 func (s *Signer) MintAccessToken(userID int, clientID string) (string, error) {
 	now := time.Now()
 
+	s.KeyManager.mu.RLock()
+	kid := s.KeyManager.activeKID
+	priv := s.KeyManager.privateKeys[kid]
+	s.KeyManager.mu.RUnlock()
+
 	scopes, _ := getScopesForUser(s.DB, userID)
+
+	if priv == nil {
+		return "", errors.New("active signing key not found")
+	}
 
 	claims := jwt.MapClaims{
 		"iss": s.Issuer,
@@ -58,14 +80,19 @@ func (s *Signer) MintAccessToken(userID int, clientID string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	token.Header["kid"] = s.KeyID
+	token.Header["kid"] = kid
 
-	return token.SignedString(s.PrivateKey)
+	return token.SignedString(priv)
 }
 
 
 
 func (s *Signer) MintIDToken(userID int, clientID string, authTime time.Time) (string, error) {
+
+	s.KeyManager.mu.RLock()
+	kid := s.KeyManager.activeKID
+	priv := s.KeyManager.privateKeys[kid]
+	s.KeyManager.mu.RUnlock()
 
 	var username string
 	err := s.DB.QueryRow(
@@ -77,6 +104,10 @@ func (s *Signer) MintIDToken(userID int, clientID string, authTime time.Time) (s
 	}
 
 	now := time.Now()
+
+		if priv == nil {
+		return "", errors.New("active signing key not found")
+	}
 
 	claims := jwt.MapClaims{
 		"iss":       s.Issuer,
@@ -90,5 +121,5 @@ func (s *Signer) MintIDToken(userID int, clientID string, authTime time.Time) (s
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-	return token.SignedString(s.PrivateKey)
+	return token.SignedString(priv)
 }
