@@ -45,7 +45,6 @@ func ConsumeAuthCode(
 		return nil, ErrInvalidCode
 	}
 
-	// 🔥 SINGLE-USE: delete immediately
 	_, err = tx.ExecContext(ctx,
 		`DELETE FROM authorization_codes WHERE code = $1`,
 		code,

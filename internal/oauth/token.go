@@ -51,26 +51,26 @@ func(h *TokenHandler) handleAuthorizationCode(w http.ResponseWriter,r *http.Requ
 	}
 	defer tx.Rollback()
 
-	// 🔥 Single-use auth code
+	//Single-use auth code
 	authCode, err := ConsumeAuthCode(ctx, tx, code)
 	if err != nil {
 		http.Error(w, "invalid code", http.StatusBadRequest)
 		return
 	}
 
-	// 🔐 Client binding
+
 	if authCode.ClientID != clientID {
 		http.Error(w, "client mismatch", http.StatusBadRequest)
 		return
 	}
 
-	// 🔐 PKCE
+	
 	if err := VerifyPKCE(verifier, authCode.CodeChallenge); err != nil {
 		http.Error(w, "pkce verification failed", http.StatusBadRequest)
 		return
 	}
 
-	// 🟢 Mint access token
+	//mint access token
 	accessToken, err := h.Signer.MintAccessToken(authCode.UserID, clientID)
 	if err != nil {
 		http.Error(w, "token signing failed", http.StatusInternalServerError)
@@ -90,7 +90,7 @@ func(h *TokenHandler) handleAuthorizationCode(w http.ResponseWriter,r *http.Requ
 	// print(idToken)
 
 
-	// 🔄 Create refresh token (inside tx)
+	//Create refresh token
 	rawRT, hashRT := generateRefreshToken()
 	rtID := uuid.New()
 
@@ -109,13 +109,13 @@ func(h *TokenHandler) handleAuthorizationCode(w http.ResponseWriter,r *http.Requ
 		return
 	}
 
-	// ✅ Commit atomic operation
+
 	if err := tx.Commit(); err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
 
-	// 📤 Response
+	
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"access_token":  accessToken,
@@ -185,14 +185,14 @@ func (h *TokenHandler) handleRefreshToken(w http.ResponseWriter, r *http.Request
 		&expiresAt,
 	)
 
-	// ❌ Not found OR expired → reuse / invalid
+
 	if err != nil || revoked || time.Now().After(expiresAt) {
 		h.revokeRefreshFamily(tx, rtID)
 		http.Error(w, "invalid refresh token", http.StatusUnauthorized)
 		return
 	}
 
-	// 🔄 Rotate: revoke old
+
 	_, err = tx.Exec(
 		`UPDATE refresh_tokens SET revoked=true WHERE id=$1`,
 		rtID,
@@ -202,7 +202,7 @@ func (h *TokenHandler) handleRefreshToken(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// 🔁 Issue new refresh token
+
 	newRaw, newHash := generateRefreshToken()
 	newID := uuid.New()
 
@@ -218,7 +218,6 @@ func (h *TokenHandler) handleRefreshToken(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// 🟢 Mint new access token
 	accessToken, err := h.Signer.MintAccessToken(userID, clientID)
 	if err != nil {
 		http.Error(w, "token signing failed", http.StatusInternalServerError)
@@ -230,7 +229,7 @@ func (h *TokenHandler) handleRefreshToken(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// 📤 Response
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"access_token":  accessToken,

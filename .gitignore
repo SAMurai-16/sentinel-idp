@@ -61,7 +61,5 @@ temp/
 # ========================
 /vendor/
 
-go1.25.5.linux-amd64.tar.gz
-
 
 keys/
