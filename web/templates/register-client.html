@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login</title>
+  <title>Register OAuth Client</title>
   <style>
     * {
       box-sizing: border-box;
@@ -76,6 +76,19 @@
       background-color: #9cc6ff;
     }
 
+    .success {
+      color: #dce4ee;
+      padding: 15px;
+      background-color: #1d1a12;
+      border-left: 4px solid #f5a915;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+
+    .success strong {
+      color: #f1f4f8;
+    }
+
     .error {
       color: #ffd6d6;
       padding: 15px;
@@ -84,20 +97,58 @@
       border-radius: 5px;
       margin-bottom: 15px;
     }
+
+    .client-info {
+      background-color: #111216;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      border: 1px solid #2b2f37;
+    }
+
+    .client-info p {
+      margin: 5px 0;
+      word-break: break-all;
+    }
+
+    .link {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .link a {
+      color: #88b9ff;
+      text-decoration: none;
+      display: block;
+      margin-top: 10px;
+    }
+
+    .link a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Login</h1>
+    <h1>Register OAuth Client</h1>
+    <div class="success" {{if not .Success}}hidden{{end}}>
+      <strong>Success!</strong> OAuth Client registered successfully.
+      <div class="client-info">
+        <p><strong>Client ID:</strong> {{.ClientID}}</p>
+        <p><strong>Redirect URI:</strong> {{.RedirectURI}}</p>
+      </div>
+    </div>
     <div class="error" {{if not .Error}}hidden{{end}}>
       <strong>Error:</strong> {{.Error}}
     </div>
     <form method="POST">
-      <input type="hidden" name="next" value="{{.Next}}" />
-      <input name="username" placeholder="Username" required />
-      <input name="password" type="password" placeholder="Password" required />
-      <button type="submit">Login</button>
+      <input name="redirect_uri" placeholder="Redirect URI (e.g., http://localhost:3000/callback)" required />
+      <button type="submit">Register Client</button>
     </form>
+    <div class="link">
+      <p><a href="/register">Register User</a></p>
+      <p><a href="/login">Back to Login</a></p>
+    </div>
   </div>
 </body>
 </html>

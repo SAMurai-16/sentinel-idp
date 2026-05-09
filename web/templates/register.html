@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login</title>
+  <title>Register User</title>
   <style>
     * {
       box-sizing: border-box;
@@ -76,6 +76,19 @@
       background-color: #9cc6ff;
     }
 
+    .success {
+      color: #dce4ee;
+      padding: 15px;
+      background-color: #1d1a12;
+      border-left: 4px solid #f5a915;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+
+    .success strong {
+      color: #f1f4f8;
+    }
+
     .error {
       color: #ffd6d6;
       padding: 15px;
@@ -84,20 +97,44 @@
       border-radius: 5px;
       margin-bottom: 15px;
     }
+
+    .link {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .link p {
+      margin: 12px 0 0;
+    }
+
+    .link a {
+      color: #88b9ff;
+      text-decoration: none;
+    }
+
+    .link a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Login</h1>
+    <h1>Register User</h1>
+    <div class="success" {{if not .Success}}hidden{{end}}>
+      <strong>Success!</strong> {{.Message}}
+    </div>
     <div class="error" {{if not .Error}}hidden{{end}}>
       <strong>Error:</strong> {{.Error}}
     </div>
     <form method="POST">
-      <input type="hidden" name="next" value="{{.Next}}" />
       <input name="username" placeholder="Username" required />
       <input name="password" type="password" placeholder="Password" required />
-      <button type="submit">Login</button>
+      <button type="submit">Register</button>
     </form>
+    <div class="link">
+      <p>Already have an account? <a href="/login">Login here</a></p>
+      <p><a href="/register-client">Register OAuth Client</a></p>
+    </div>
   </div>
 </body>
 </html>

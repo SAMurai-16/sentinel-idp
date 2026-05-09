@@ -3,6 +3,7 @@ package middleware
 import (
 	"database/sql"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -11,7 +12,7 @@ func RequireSession(db *sql.DB, next http.Handler) http.Handler {
 
 		cookie, err := r.Cookie("sentinel_session")
 		if err != nil {
-			http.Redirect(w, r, "/login", http.StatusFound)
+			http.Redirect(w, r, "/login?next="+url.QueryEscape(r.URL.RequestURI()), http.StatusFound)
 			return
 		}
 
@@ -27,7 +28,7 @@ func RequireSession(db *sql.DB, next http.Handler) http.Handler {
 				Value:  "",
 				MaxAge: -1,
 			})
-			http.Redirect(w, r, "/login", http.StatusFound)
+			http.Redirect(w, r, "/login?next="+url.QueryEscape(r.URL.RequestURI()), http.StatusFound)
 			return
 		}
 

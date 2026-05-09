@@ -16,35 +16,24 @@ import (
 	"github.com/SAMurai-16/sentinel-idp/internal/storage"
 )
 
-
-
-func main(){
+func main() {
 
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("No .env file found, relying on environment variables")
 	}
 
-	
 	dsn := os.Getenv("DATABASE_URL")
-	if dsn == ""{
+	if dsn == "" {
 		log.Fatal("DATABASE_URL not set")
 	}
 
-	db,err := storage.Open(dsn)
-	if err!= nil {
+	db, err := storage.Open(dsn)
+	if err != nil {
 		log.Fatal(err)
 	}
 
 	defer db.Close()
-
-
-
-
-
-
-
-
 
 	// privateKey, err := jwtutil.LoadPrivateKey("keys/private.pem")
 	// if err != nil {
@@ -56,27 +45,23 @@ func main(){
 	// log.Fatal("failed to load public key:", err)
 	// }
 
-
 	keyManager, err := jwtutil.LoadKeys(db)
 	if err != nil {
 		log.Fatal(err)
 	}
-	
-	
 
 	signer := &jwtutil.Signer{
-	DB:         db,
-	Issuer:     "http://localhost:8080",
-	KeyManager: keyManager,
+		DB:         db,
+		Issuer:     "http://localhost:8080",
+		KeyManager: keyManager,
 	}
-
 
 	authHandler := &auth.Handler{DB: db}
 	oauthHandler := &oauth.AuthorizeHandler{DB: db}
 
 	tokenHandler := &oauth.TokenHandler{
-	DB:     db,
-	Signer: signer,
+		DB:     db,
+		Signer: signer,
 	}
 
 	jwksHandler := &jwtutil.JWKSHandler{KeyManager: keyManager}
@@ -84,36 +69,34 @@ func main(){
 	issuer := "http://localhost:8080"
 
 	go func() {
-	ticker := time.NewTicker(1 * time.Minute)
-	defer ticker.Stop()
+		ticker := time.NewTicker(1 * time.Minute)
+		defer ticker.Stop()
 
-	for range ticker.C {
-		if err := keyManager.ReloadFromDB(db); err != nil {
-			log.Println("key reload failed:", err)
-		} else {
-			log.Println("signing keys reloaded")
+		for range ticker.C {
+			if err := keyManager.ReloadFromDB(db); err != nil {
+				log.Println("key reload failed:", err)
+			} else {
+				log.Println("signing keys reloaded")
+			}
 		}
-	}
 	}()
-
-
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/login", authHandler.Login)
 	mux.HandleFunc("/login/", authHandler.Login)
+	mux.HandleFunc("/register", authHandler.Register)
+	mux.HandleFunc("/register-client", authHandler.RegisterClient)
 
 	protected := middleware.RequireSession(db, http.HandlerFunc(home))
 	mux.Handle("/", protected)
 	mux.Handle("/authorize",
-	middleware.RequireSession(db, http.HandlerFunc(oauthHandler.Authorize)),
+		middleware.RequireSession(db, http.HandlerFunc(oauthHandler.Authorize)),
 	)
 	mux.Handle("/logout",
-	middleware.RequireCSRF(
-		http.HandlerFunc(oauthHandler.Logout),
-	),
+		middleware.RequireCSRF(
+			http.HandlerFunc(oauthHandler.Logout),
+		),
 	)
-
-
 
 	mux.HandleFunc("/token", tokenHandler.Token)
 	mux.Handle("/jwks.json", jwksHandler)
@@ -121,19 +104,21 @@ func main(){
 	mux.HandleFunc("/revoked", oauthHandler.IsRevoked)
 
 	mux.Handle(
-	"/.well-known/openid-configuration",
-	oidc.DiscoveryHandler(issuer),
+		"/.well-known/openid-configuration",
+		oidc.DiscoveryHandler(issuer),
 	)
 
 
+	port := os.Getenv("PORT")
 
-	log.Println("Sentinel listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Println("Sentinel listening on port",port)
+	log.Fatal(http.ListenAndServe(":"+port, mux))
 
 }
-
-
-
 
 func home(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Sentinel running"))

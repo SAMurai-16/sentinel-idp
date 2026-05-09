@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Grant Permission</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      padding: 16px 18px 32px;
+      background: #101114;
+      color: #d7dce2;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .container {
+      width: min(100%, 420px);
+      background-color: #1b1d21;
+      padding: 42px 28px 28px;
+      border: 1px solid #292c33;
+      border-radius: 8px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+    }
+
+    .avatar {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 34px;
+      border-radius: 14px;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0) 38%),
+        linear-gradient(145deg, #ff6b87, #8e344c 52%, #422032);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 12px 28px rgba(255, 107, 135, 0.18);
+    }
+
+    h1 {
+      color: #e5e9ef;
+      text-align: center;
+      font-size: 18px;
+      margin: 0 0 22px;
+    }
+
+    .account,
+    .scope,
+    .warning {
+      border-radius: 5px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .account,
+    .scope {
+      background-color: #111216;
+      border: 1px solid #2b2f37;
+    }
+
+    .label {
+      color: #f1f4f8;
+      font-size: 13px;
+      font-weight: 700;
+      margin: 0 0 4px;
+    }
+
+    .muted {
+      color: #8c939e;
+      font-size: 13px;
+      margin: 0;
+    }
+
+    .request {
+      color: #dce4ee;
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+
+    .scope {
+      color: #aeb7c2;
+      font-size: 13px;
+    }
+
+    .scope::before {
+      content: "✓";
+      color: #88b9ff;
+      font-weight: 700;
+      margin-right: 10px;
+    }
+
+    .warning {
+      background-color: #1d1a12;
+      border-left: 4px solid #f5a915;
+      color: #dce4ee;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .warning strong {
+      color: #f1f4f8;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .deny {
+      color: #88b9ff;
+      background-color: transparent;
+      border: 1px solid #2b2f37;
+    }
+
+    .deny:hover {
+      background-color: #111216;
+    }
+
+    .allow {
+      background-color: #88b9ff;
+      color: #182235;
+      border: none;
+    }
+
+    .allow:hover {
+      background-color: #9cc6ff;
+    }
+
+    .footer {
+      color: #777f8b;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 22px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="avatar"></div>
+    <h1>Grant Permission</h1>
+
+    <div class="account">
+      <p class="label">{{.Username}}</p>
+      <p class="muted">Signed in to Sentinel IDP</p>
+    </div>
+
+    <p class="request">{{.ClientID}} wants to access your account</p>
+    <div class="scope">View your basic profile information</div>
+
+    <div class="warning">
+      <strong>Make sure you trust {{.ClientID}}</strong>
+      You may be sharing sensitive info with this site or app. Review its terms and privacy policies before continuing.
+    </div>
+
+    <form method="POST">
+      <input type="hidden" name="client_id" value="{{.ClientID}}" />
+      <input type="hidden" name="redirect_uri" value="{{.RedirectURI}}" />
+      <input type="hidden" name="code_challenge" value="{{.CodeChallenge}}" />
+      <input type="hidden" name="code_challenge_method" value="{{.CodeChallengeMethod}}" />
+      <input type="hidden" name="state" value="{{.State}}" />
+      <div class="actions">
+        <button class="deny" type="submit" name="decision" value="deny">Deny</button>
+        <button class="allow" type="submit" name="decision" value="allow">Allow</button>
+      </div>
+    </form>
+
+    <div class="footer">Powered by Sentinel Identity Provider</div>
+  </div>
+</body>
+</html>
